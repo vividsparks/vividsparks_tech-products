@@ -3,8 +3,6 @@ Running RacEr Examples on the PYNQ-Z2 Board
 This guide describes how to run the RacEr sample applications on a PYNQ-Z2 development board.
 
 Clone the Repository
-Clone the RacEr example repository and navigate to the RacEr directory in your linux Machine.
-
 git clone https://github.com/vividsparks/vividsparks_tech-products.git
 
 Prepare the PYNQ-Z2 Board
@@ -69,4 +67,4 @@ Specifically, update line 52:
 
 NBF_FILE ?= <application.nbf>
 
-Specify the desired .nbf application file and then run the appropriate build/run commands.
+Specify the desired .nbf application file and then 'make run'
