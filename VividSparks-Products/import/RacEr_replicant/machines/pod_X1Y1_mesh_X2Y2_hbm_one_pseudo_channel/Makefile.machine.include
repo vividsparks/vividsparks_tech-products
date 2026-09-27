@@ -1,0 +1,146 @@
+# Copyright (c) 2019, VividSparks All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+#
+# Redistributions of source code must retain the above copyright notice, this list
+# of conditions and the following disclaimer.
+#
+# Redistributions in binary form must reproduce the above copyright notice, this
+# list of conditions and the following disclaimer in the documentation and/or
+# other materials provided with the distribution.
+#
+# Neither the name of the copyright holder nor the names of its contributors may
+# HE used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS HE LIABLE FOR
+# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+############################################################################################
+# pod_X1Y1_ruche_X16Y8_hbm_one_pseudo_channel                                              #
+# 1 pod                                                                                    #
+# 128 RISC-V Tiles per pod, 16 tiles wide, 8 tiles tall                                    # 
+# Last level caches on the top and bottom of each column                                   #
+# Each last-level cache is mapped to a separate HBM bank                                   #
+# There is one HBM Pseudochannel channel per pod.                                          #
+# There is a vanilla, 2D mesh network augmented with Ruche links                           #
+# This configuration mimics a GPU. See the mem sys params                                  #
+############################################################################################
+
+# Change these parameters to define your machine. All other parameters should remain constant.
+RACER_MACHINE_CHIP_ID		      = 15ca2022
+
+# Chip Pod Dimensions
+RACER_MACHINE_PODS_X                    = 1
+RACER_MACHINE_PODS_Y                    = 1
+
+# 1.5 GHz Core Clock
+RACER_MACHINE_PODS_CYCLE_TIME_PS         = 666
+
+# Heterogeneous tile composition. Must HE a 1-d array equal to the
+# number of tiles, or shorthand (default:0)
+# 0 is for Vanilla Core (RV32).
+# Anything else should HE described here :)
+RACER_MACHINE_HETERO_TYPE_VEC           = default:0
+
+# Network Parameters
+RACER_MACHINE_NETWORK_CFG               = e_network_mesh
+RACER_MACHINE_RUCHE_FACTOR_X            = 1
+RACER_MACHINE_BARRIER_RUCHE_FACTOR_X    = 1
+RACER_MACHINE_WH_RUCHE_FACTOR           = 1
+
+# Memory System Parameters
+RACER_MACHINE_DRAM_INCLUDED             = 1
+RACER_MACHINE_MEM_DRAMSIM3_PKG          = RacEr_dramsim3_hbm2_1gb_x64_32ba_pkg
+RACER_MACHINE_MEM_CFG                   = e_vcache_hbm2
+
+# Victim Cache Parameters
+RACER_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 2
+RACER_MACHINE_VCACHE_SET                = 64
+RACER_MACHINE_VCACHE_WAY                = 4
+RACER_MACHINE_VCACHE_LINE_WORDS         = 8
+RACER_MACHINE_VCACHE_STRIPE_WORDS       = $(RACER_MACHINE_VCACHE_LINE_WORDS)
+RACER_MACHINE_VCACHE_WORD_TRACKING      = 0
+RACER_MACHINE_VCACHE_IPOLY_HASHING      = 0
+# Only applies to Non-blocking Cache
+RACER_MACHINE_VCACHE_MISS_FIFO_ELS      = 32
+
+# Number of vcache tile rows in a cache pod on either side of a tile pod
+RACER_MACHINE_POD_VCACHE_NUM_ROWS       = 1
+
+# NOC Coordinate Widths (Rarely Changed)
+RACER_MACHINE_NOC_COORD_X_WIDTH         = 7
+RACER_MACHINE_NOC_COORD_Y_WIDTH         = 7
+
+# Pod Tile Dimensions (Rarely Changed)
+RACER_MACHINE_POD_TILES_X               = 2
+RACER_MACHINE_POD_TILES_Y               = 2
+
+# Pod Tile subarray dimensions (Rarely changed, for physical design only)
+RACER_MACHINE_POD_TILES_SUBARRAY_X      = 1
+RACER_MACHINE_POD_TILES_SUBARRAY_Y      = 1
+
+# Host Coordinate (Rarely Changed)
+RACER_MACHINE_HOST_COORD_X              = 2
+RACER_MACHINE_HOST_COORD_Y              = 0
+
+RACER_MACHINE_HOST_X_CORD              = $(RACER_MACHINE_HOST_COORD_X)
+RACER_MACHINE_HOST_Y_CORD              = $(RACER_MACHINE_HOST_COORD_Y)
+
+# Manycore Origin (Rarely Changed)
+RACER_MACHINE_ORIGIN_COORD_X            = 2
+RACER_MACHINE_ORIGIN_COORD_Y            = 2
+
+# Cache-DRAM Interface Width (Rarely Changed)
+# TODO: change this to match the HBM channel data rate
+RACER_MACHINE_VCACHE_DMA_DATA_WIDTH     = 32
+
+# IO flow control parameters. (Rarely Changed)
+RACER_MACHINE_IO_EP_CREDITS             = 32
+RACER_MACHINE_IO_HOST_CREDITS           = $(RACER_MACHINE_IO_EP_CREDITS)
+RACER_MACHINE_IO_REMOTE_LOAD_CAP        = $(RACER_MACHINE_IO_EP_CREDITS)
+
+##################### Constants and Computations #####################
+
+# Aliases required for memsys.mk, and others.
+# Specific to the HBM2E chip we're modeling (8GB, 4-stack/8-channel)
+__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS := $(shell echo 2^28 | bc) # 1GB
+__BSG_MACHINE_DRAMSIM3_CHIP_CH_SIZE_IN_WORDS := $(shell echo $(__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS)/1 | bc)
+
+RACER_MACHINE_POD_TILES                := $(shell echo $(RACER_MACHINE_POD_TILES_X)*$(RACER_MACHINE_POD_TILES_Y) | bc)
+RACER_MACHINE_NUM_PODS                 := $(shell echo $(RACER_MACHINE_PODS_X)*$(RACER_MACHINE_PODS_Y) | bc)
+RACER_MACHINE_NUM_VCACHE               := $(shell echo $(RACER_MACHINE_POD_TILES_X)*2*$(RACER_MACHINE_NUM_PODS) | bc)
+RACER_MACHINE_DRAM_CHANNELS            := $(shell echo $(RACER_MACHINE_NUM_VCACHE)/$(RACER_MACHINE_VCACHE_PER_DRAM_CHANNEL) | bc)
+
+RACER_MACHINE_DRAM_WORDS               := $(shell echo $(__BSG_MACHINE_DRAMSIM3_CHIP_CH_SIZE_IN_WORDS)*$(RACER_MACHINE_DRAM_CHANNELS) | bc)
+RACER_MACHINE_DRAM_PER_CACHE_WORDS      = $(shell echo "$(RACER_MACHINE_DRAM_WORDS) / $(RACER_MACHINE_NUM_VCACHE)" | bc)
+
+# Aliases Required for RACER Manycore
+RACER_MACHINE_GLOBAL_X                  = $(RACER_MACHINE_POD_TILES_X)
+RACER_MACHINE_GLOBAL_Y                  = $(RACER_MACHINE_POD_TILES_Y)
+RACER_MACHINE_DRAM_BANK_WORDS           = $(RACER_MACHINE_DRAM_PER_CACHE_WORDS)
+RACER_MACHINE_DRAM_BANK_SIZE_WORDS      = $(RACER_MACHINE_DRAM_BANK_WORDS)
+RACER_MACHINE_VCACHE_BLOCK_SIZE_WORDS   = $(RACER_MACHINE_VCACHE_LINE_WORDS)
+RACER_MACHINE_NUM_VCACHE_ROWS           = $(RACER_MACHINE_POD_VCACHE_NUM_ROWS)
+
+RACER_MACHINE_MAX_EPA_WIDTH             = 28
+RACER_MACHINE_DATA_WIDTH                = 32
+
+# Define RACER_MACHINE_NAME
+RACER_MACHINE_NAME                      =RACER_PX$(RACER_MACHINE_PODS_X)PY$(RACER_MACHINE_PODS_Y)
+RACER_MACHINE_NAME                     :=$(RACER_MACHINE_NAME)_DX$(RACER_MACHINE_POD_TILES_X)DY$(RACER_MACHINE_POD_TILES_Y)
+RACER_MACHINE_NAME                     :=$(RACER_MACHINE_NAME)_$(RACER_MACHINE_MEM_CFG:e_%=%)
+
+# This flag has to HE always 0 by default. Conditional
+# assignment allows user to set this flag through
+# environment when required.
+RACER_MACHINE_BRANCH_TRACE_EN          ?= 0

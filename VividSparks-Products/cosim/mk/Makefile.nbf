@@ -1,0 +1,92 @@
+
+include $(COSIM_MK_DIR)/Makefile.env
+
+VCS_OPTS += -full64
+VCS_OPTS += -notice
+#VCS_OPTS += -kdb
+#VCS_OPTS += -lca
+#VCS_OPTS += +fsdb+all 
+#VCS_OPTS += -debug_access+all
+VCS_OPTS += -V
+VCS_OPTS += +v2k -sverilog
+VCS_OPTS += -assert svaext
+VCS_OPTS += +noportcoerce
+VCS_OPTS += -timescale=1ps/1ps
+VCS_OPTS += -diag timescale
+VCS_OPTS += -f flist.vcs
+VCS_OPTS += -top $(TB_MODULE)
+VCS_OPTS += -debug_pp
+VCS_OPTS += +vcs+vcdpluson +vcs+vcdplusautoflushon
+VCS_OPTS += +vcs+lic+wait
+VCS_OPTS += +incdir+$(COSIM_DIR)/include/vcs
+VCS_OPTS += $(addprefix +define+,$(DEFINES))
+VCS_OPTS += $(MAIN_PROGRAM)
+VCS_OPTS += $(HK_SDK_LIB_DIR)/libboost_coroutine.a
+VCS_OPTS += $(HK_SDK_LIB_DIR)/libboost_context.a
+VCS_OPTS += $(HK_SDK_LIB_DIR)/libboost_system.a
+
+CFLAGS += -DVCS
+CFLAGS += -DHOST_ZYNQ
+#CFLAGS += -DHOST_$(call upper,$(HOST))
+CFLAGS += -DUART_ENABLE
+CFLAGS += -std=c++14
+CFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE
+CFLAGS += $(addprefix -D,$(DEFINES))
+# PL Debug
+ifeq ($(ZYNQ_PL_DEBUG),1)
+CFLAGS += -DZYNQ_PL_DEBUG
+endif
+# PS Debug
+ifeq ($(ZYNQ_PS_DEBUG),1)
+CFLAGS += -DZYNQ_PS_DEBUG
+endif
+
+CINCLUDES += -I$(HK_SDK_INSTALL_DIR)/include
+CINCLUDES += -I$(COSIM_INCLUDE_DIR)/common
+CINCLUDES += -I$(COSIM_INCLUDE_DIR)/vcs
+CINCLUDES += -I$(BASEJUMP_STL_DIR)/RacEr_mem
+CINCLUDES += -I$(BASEJUMP_STL_DIR)/RacEr_test
+CINCLUDES += -I$(CURR_DESIGN_DIR)
+
+TRACE ?= +RacEr_trace +vpdfilesize+512
+
+all:
+	@echo "## See the makefile for the fun things you can do in this directory"
+
+RUN_LOG ?= run.log
+nbf:  $(RUN_COLLATERAL)
+#	./$< $(SIM_ARGS) $(TRACE) 2>&1 | tee -i $(RUN_LOG)
+
+BUILD_LOG ?= build.log
+simv: $(HOST_PROGRAM) $(FLIST) $(BUILD_COLLATERAL)
+	$(VCS) $(VCS_OPTS) -CFLAGS "$(CFLAGS)" -CFLAGS "$(CINCLUDES)" \
+		-LDFLAGS "$(LDFLAGS)" -o $@ $<  \
+		2>&1 | tee -i $(BUILD_LOG)
+
+clean:
+	rm -rf csrc/
+	rm -rf ucli.key
+	rm -rf vc_hdrs.h
+	rm -rf flist*.vcs
+	rm -rf simv* vcdplus.vpd
+	rm -rf build.log
+	rm -rf run.log
+	rm -rf *.nbf
+	rm -rf *.elf
+	rm -rf *.trace
+	rm -rf *.riscv*
+	rm -rf *.rv*o*
+	rm -rf *.dump*
+	rm -rf $(BUILD_COLLATERAL) $(SIM_COLLATERAL)
+
+view:
+	$(_DVE) -full64 -vpd vcdplus.vpd
+
+help:
+	@echo -e "Usage: make"
+	@echo -e "\tclean - Cleans directory"
+	@echo -e "\tview - Open waveform in gtkwave"
+	@echo -e "\tall - Runs the current test"
+	@echo -e "Options"
+	@echo -e "\tTRACE = whether to dump a .fst waveform"
+

@@ -1,0 +1,96 @@
+TOP  := $(shell git rev-parse --show-toplevel)
+CURR := $(shell pwd)
+include $(TOP)/Makefile.common
+include $(TOP)/Makefile.config
+
+#############################
+# Design Settings
+#############################
+TB_MODULE  ?= RacEr_nonsynth_zynq_testbench
+BASENAME   ?= manycore
+
+MAIN_PROGRAM ?= $(COSIM_CSRC_DIR)/main.cpp
+HOST_PROGRAM ?= $(CURR_DESIGN_DIR)/ps.cpp
+
+#############################
+# Design Defines
+#############################
+DEFINES += GP0_ENABLE=1
+DEFINES += GP0_ADDR_WIDTH=10 GP0_DATA_WIDTH=32
+DEFINES += GP0_HIER_BASE=RacEr_nonsynth_zynq_testbench.axil0
+DEFINES += HP0_ENABLE=1
+DEFINES += HP0_DATA_WIDTH=64 HP0_ADDR_WIDTH=32
+DEFINES += ACLK_MHZ=30
+DEFINES += RTCLK_MHZ=8
+
+#############################
+RACER_MACHINE_PATH ?= $(RACER_REPLICANT_DIR)/machines/pod_X1Y1_mesh_X2Y2_hbm_one_pseudo_channel
+include $(RACER_MACHINE_PATH)/Makefile.machine.include
+# Arbitrary, need to HE set
+HARDWARE_PATH     := $(RACER_REPLICANT_DIR)/hardware
+LIBRARIES_PATH    := $(RACER_REPLICANT_DIR)/libraries
+RACER_PLATFORM_PATH := $(LIBRARIES_PATH)/platforms/bigblade-vcs
+RACER_F1_DIR        := $(RACER_REPLICANT_DIR)
+include $(RACER_REPLICANT_DIR)/hardware/hardware.mk
+
+$(CURR_VSRC_DIR)/RacEr_bladerunner_pkg.sv: $(RACER_MACHINE_PATH)/RacEr_bladerunner_pkg.sv
+	cp $< $@
+	$(SED) -i "/parameter int RacEr_machine_hetero_type_vec_gp/d" $@
+
+$(CURR_VSRC_DIR)/RacEr_bladerunner_configuration.sv: $(RACER_MACHINE_PATH)/RacEr_bladerunner_configuration.rom
+	$(PYTHON2) $(ASCII_TO_ROM_PY) $< RacEr_bladerunner_configuration > $@
+
+$(CURR_DESIGN_DIR)/RacEr_manycore_machine.h: $(RACER_MACHINE_PATH)/RacEr_manycore_machine.h
+	cp $< $@
+
+.PHONY: $(BUILD_COLLATERAL)
+BUILD_COLLATERAL = $(CURR_VSRC_DIR)/RacEr_bladerunner_pkg.sv $(CURR_VSRC_DIR)/RacEr_bladerunner_configuration.sv $(CURR_DESIGN_DIR)/RacEr_manycore_machine.h
+
+#############################
+# Run Collateral
+#############################
+#NBF_FILE   ?= hello.nbf
+NBF_FILE   ?= float_dram_test.nbf
+NBF_SCRIPT ?= $(RACER_MANYCORE_DIR)/software/py/nbf.py
+%.riscv32:
+	$(MAKE) RACER_MACHINE_PATH=$(RACER_MACHINE_PATH) -C $(RACER_MANYCORE_SOFTWARE_DIR)/spmd/$* \
+		clean main.riscv
+#	$(MAKE) RACER_MACHINE_PATH=$(RACER_MACHINE_PATH) -C $(RACER_MANYCORE_SOFTWARE_DIR)/spmd/RacEr_cuda_lite_runtime/$* \
+		clean main.riscv
+	mv $(RACER_MANYCORE_SOFTWARE_DIR)/spmd/$*/main.riscv $@
+
+#	mv $(RACER_MANYCORE_SOFTWARE_DIR)/spmd/RacEr_cuda_lite_runtime/$*/main.riscv $@
+
+# Vary per program
+RacEr_tiles_org_X            ?= 0
+RacEr_tiles_org_Y            ?= 0
+RacEr_tiles_X                ?= 1
+RacEr_tiles_Y                ?= 1
+RacEr_pods_X                 ?= 1
+RacEr_pods_Y                 ?= 1
+RacEr_elf_off_chip_mem       ?= 1
+skip_dram_instruction_load ?= 0
+skip_zeros                 ?= 1
+ipoly_hashing              ?= 0
+
+%.nbf: %.riscv32
+	python $(NBF_SCRIPT) \
+		$< \
+		$(RACER_MACHINE_GLOBAL_X) $(RACER_MACHINE_GLOBAL_Y) \
+		$(RACER_MACHINE_VCACHE_WAY) $(RACER_MACHINE_VCACHE_SET) \
+		$(RACER_MACHINE_VCACHE_BLOCK_SIZE_WORDS) \
+		$(__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS) $(RACER_MACHINE_MAX_EPA_WIDTH) \
+		$(RacEr_tiles_org_X) $(RacEr_tiles_org_Y) \
+		$(RacEr_tiles_X) $(RacEr_tiles_Y) $(RacEr_elf_off_chip_mem) \
+		$(RACER_MACHINE_ORIGIN_COORD_X) $(RACER_MACHINE_ORIGIN_COORD_Y) \
+		$(RACER_MACHINE_PODS_X) $(RACER_MACHINE_PODS_Y) \
+		$(RacEr_pods_X) $(RacEr_pods_Y) \
+		$(skip_dram_instruction_load) \
+		$(skip_zeros) \
+		$(ipoly_hashing) \
+		  > $*.nbf
+#	rm main_dram.mem main_dmem.mem
+
+NBF_FILE ?= hello.nbf
+RUN_COLLATERAL = $(NBF_FILE)
+
