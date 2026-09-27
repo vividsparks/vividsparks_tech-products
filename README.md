@@ -4,10 +4,10 @@ This guide describes how to run the RacEr sample applications on a PYNQ-Z2 devel
 
 1. Clone the Repository
 
-Clone the RacEr example repository and navigate to the RacEr directory.
+Clone the RacEr example repository and navigate to the RacEr directory in your linux Machine. 
 
-git clone https://github.com/vividsparks/vividsparks_tech.git
-cd VividSparks-Products/cosim/RacEr-example/RacEr
+git clone https://github.com/vividsparks/vividsparks_tech-products.git
+
 
 2. Prepare the PYNQ-Z2 Board
 
@@ -23,7 +23,7 @@ https://pynq.readthedocs.io/en/v2.3/getting_started/pynq_z2_setup.html
 
 3. Connect to the Board via SSH
 
-Once the board is connected to the network, determine its IP address and connect to it using SSH.
+Once the board is connected to the network, determine its IP address and connect to it using SSH. 
 
 For example:
 
@@ -33,6 +33,10 @@ ssh xilinx@x.x.x.x
 When prompted for the password, enter:
 
 xilinx
+
+copy VividSparks-Products to Pynq Z2 board: 
+
+scp -r VividSparks-Products xilinx@x.x.x.x:/home/xilinx
 
 4. Load the RacEr Bitstream
 
