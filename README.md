@@ -4,8 +4,6 @@ This guide describes how to run the RacEr sample applications on a PYNQ-Z2 devel
 
 1. Clone the Repository
 
-Clone the RacEr example repository and navigate to the RacEr directory in your linux Machine. 
-
 git clone https://github.com/vividsparks/vividsparks_tech-products.git
 
 
