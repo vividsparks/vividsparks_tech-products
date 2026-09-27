@@ -84,4 +84,4 @@ Specifically, update line 52:
 NBF_FILE ?= <application.nbf>
 
 
-Specify the desired .nbf application file and then run the appropriate build/run commands.
+Specify the desired .nbf application file and then 'make run' 
