@@ -5,6 +5,10 @@ This guide describes how to run the RacEr sample applications on a PYNQ-Z2 devel
 Clone the Repository
 git clone https://github.com/vividsparks/vividsparks_tech-products.git
 
+cd VividSparks-Products and then type:
+
+git init
+
 Prepare the PYNQ-Z2 Board
 Download the PYNQ 2.6 image and write it to an SD card: https://drive.google.com/file/d/1td0gJX4mvQTDALvSikxMVPfiG8jsaBgm/view
 
