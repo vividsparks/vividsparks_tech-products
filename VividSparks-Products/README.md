@@ -67,7 +67,7 @@ To run a different sample application, modify the NBF_FILE variable in:
 
 VividSparks-Products/cosim/RacEr-example/Makefile.design
 
-Specifically, update line 52:
+Specifically, update line 53:
 
 NBF_FILE ?= <application.nbf>
 
